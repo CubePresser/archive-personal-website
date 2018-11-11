@@ -4,12 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <!--Fonts-->
     <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <title>Main Menu</title>
+    <link rel="stylesheet" href="style/style.css">
+
+    <!--Attempt to obtain js libraries through CDNs-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/98/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.0.15/howler.min.js"></script>
+
+    <!--Fall back to this site's copies if a CDN is down-->
+    <script> if (!window.jQuery) document.write('<script src="js/libs/jquery-3.3.1.min.js"><\/script>'); </script>
+    <script> if (!window.THREE) document.write('<script src="js/libs/three.min.js"><\/script>'); </script>
+    <script> if (!window.CANNON) document.write('<script src="js/libs/cannon.min.js"><\/script>'); </script>
+    <script> if (!window.Howl) document.write('<script src="js/libs/howler.min.js"><\/script>'); </script>
+
+    <title>Jonathan Jones - Home</title>
 </head>
 <body>
     <h1>Hello World</h1>
     <p>I am hosted on Github pages</p>
+    <p>Three.js, Cannon.js, Howler.js test (Raindrops Keep Fallin' On My Head - B.J. Thomas):</p>
+    <script>
+        var world, mass, body, shape, timeStep=1/60,
+        camera, scene, renderer, geometry, material, mesh;
+
+        function playMusic()
+        {
+            var raindrops = new Howl({
+                src: ['music/raindrops.m4a']
+            });
+
+            raindrops.play();
+        }
+
+        function initCannon() {
+            world = new CANNON.World();
+            world.gravity.set(0,0,0);
+            world.broadphase = new CANNON.NaiveBroadphase();
+            world.solver.iterations = 10;
+            shape = new CANNON.Box(new CANNON.Vec3(1,1,1));
+            mass = 1;
+            body = new CANNON.Body({
+                mass: 1
+            });
+            body.addShape(shape);
+            body.angularVelocity.set(0,10,0);
+            body.angularDamping = 0.1;
+            world.addBody(body);
+        }
+        
+        function initThree() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 100 );
+            camera.position.z = 5;
+            scene.add( camera );
+            geometry = new THREE.BoxGeometry( 2, 2, 2 );
+            material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
+            mesh = new THREE.Mesh( geometry, material );
+            scene.add( mesh );
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            document.body.appendChild( renderer.domElement );
+        }
+
+        function animate() {
+            requestAnimationFrame( animate );
+            updatePhysics();
+            render();
+        }
+
+        function updatePhysics() {
+            // Step the physics world
+            world.step(timeStep);
+            // Copy coordinates from Cannon.js to Three.js
+            mesh.position.copy(body.position);
+            mesh.quaternion.copy(body.quaternion);
+        }
+
+        function render() {
+            renderer.render( scene, camera );
+        }
+
+        playMusic();
+        initThree();
+        initCannon();
+        animate();
+    </script>
 </body>
 </html>
