@@ -54,28 +54,56 @@ function init()
 function initGeometry()
 {
     let height = 100.0, width = 100.0, rows = 100, cols = 100;
-    var grid = gridGeometry(height, width, rows, cols);
+    var grid = gridGeometry(height, width, rows, cols, 0xff00aa);
     grid.matrix.setPosition(new THREE.Vector3(-width / 2.0, 0.0,-height / 2.0));
     grid.matrixAutoUpdate = false;
     scene.add(grid);
 
-    var plane = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshPhongMaterial({color: 0xff00aa, shininess: 30}));
-    plane.translateY(-0.01);
-    plane.rotateX(4.71239);
-    scene.add(plane);
+    var ground = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshPhongMaterial({color: 0x0f0f0f, shininess: 10}));
+    ground.translateY(-0.01);
+    ground.rotateX(4.71239);
+    scene.add(ground);
 
-    var sphere = new THREE.Mesh( new THREE.SphereGeometry( 5, 10, 10 ), new THREE.MeshPhongMaterial({color: 0xff00aa, flatShading: true}));
+    var sphere = new THREE.Mesh( new THREE.SphereGeometry( 5, 10, 10 ), new THREE.MeshPhongMaterial({color: 0x0f0f0f, flatShading: true}));
     scene.add( sphere );
 
-    var ambientLight = new THREE.AmbientLight(0x004444);
+    sphere = new THREE.Mesh( new THREE.SphereGeometry( 5, 10, 10 ), new THREE.MeshBasicMaterial({color: 0x00ffff, wireframe: true}));
+    scene.add( sphere );
+
+    var sun = new THREE.Mesh(new THREE.CircleGeometry(25, 50), new THREE.MeshBasicMaterial({color: 0xff7700}));
+    sun.translateZ(-height);
+    sun.translateY(height / 4.0);
+    scene.add(sun);
+
+    var ambientLight = new THREE.AmbientLight(0x040404);
     scene.add(ambientLight);
 
-    var directionalLight = new THREE.DirectionalLight(0xff0055, 1.0);
+    var hemisphereLight =  new THREE.HemisphereLight(0x00ffff, 0x00ffff, 1.4);
+    scene.add(hemisphereLight);
+
+    var directionalLight =  new THREE.DirectionalLight(0xff00ff, 2.5)
     directionalLight.position.set( 0, height / 3, -height );
     scene.add(directionalLight);
+
+    var imagePrefix = "images/home-skybox/";
+	var directions  = ["xpos", "xneg", "ypos", "yneg", "zpos", "zneg"];
+	var imageSuffix = ".png";
+	var skyGeometry = new THREE.CubeGeometry( 2*width+1, 2*height+1, 2*height+1 );	
+	
+    var materialArray = [];
+	for (var i = 0; i < 6; i++)
+		materialArray.push( new THREE.MeshBasicMaterial({
+			map: new THREE.TextureLoader().load( imagePrefix + directions[i] + imageSuffix ),
+			side: THREE.BackSide
+		}));
+	var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
+    var skyBox = new THREE.Mesh( skyGeometry, skyMaterial );
+    skyBox.translateY(-height/100.0);
+	scene.add( skyBox );
+
 }
 
-function gridGeometry(height, width, rows, cols)
+function gridGeometry(height, width, rows, cols, color)
 {
     var grid_geometry = new THREE.BufferGeometry();
     var vertices = new Float32Array(6*(rows + cols + 2)); //Perimeter
@@ -108,7 +136,7 @@ function gridGeometry(height, width, rows, cols)
 
     grid_geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-    return new THREE.LineSegments(grid_geometry, new THREE.LineBasicMaterial( { color: 0x00ffff , linewidth: 5} ));
+    return new THREE.LineSegments(grid_geometry, new THREE.LineBasicMaterial( { color: color , linewidth: 5} ));
 }
 
 function animate()
