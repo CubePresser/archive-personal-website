@@ -2,6 +2,14 @@
  * @author jonesjonathan
  */
 
+const SETTINGS = {
+    lights : {
+        enabled     : true,
+        ambient     : true,
+        point       : true
+    }
+};
+
 const CAMERA_SETTINGS = {
     viewAngle   : 100,
     near        : 0.1,
@@ -9,22 +17,26 @@ const CAMERA_SETTINGS = {
 };
 
 //Utility globals
-let
-    scene,
-    camera,
-    renderer,
-    container,
 
-    height,
-    width,
-    aspect
-;
+/** @type {THREE.Scene} */
+    let scene;
 
-//Object globals
-let
-    centerBox
-;
+/** @type {THREE.PerspectiveCamera}*/
+    let camera;
 
+/** @type {THREE.WebGLRenderer} */
+    let renderer;
+
+/** @type {HTMLElement} */
+    let container;
+
+let height;
+let width;
+let aspect;
+
+/**
+ * Initialize website graphics
+ */
 function init() {
     getContainer();
 
@@ -38,6 +50,9 @@ function init() {
     requestAnimationFrame(animate);
 }
 
+/**
+ * 
+ */
 function getContainer() {
     container = document.getElementById("container");
     getDimensions();
@@ -51,6 +66,7 @@ function getDimensions() {
 
 function createCamera() {
     camera = new THREE.PerspectiveCamera(CAMERA_SETTINGS.viewAngle, aspect, CAMERA_SETTINGS.near, CAMERA_SETTINGS.far);
+    camera.position.set(0, 0, 4);
 }
 
 function createRenderer() {
@@ -63,10 +79,16 @@ function createRenderer() {
 
 function createScene() {
     scene = new THREE.Scene();
+
     initGeometry();
+
+    if(SETTINGS.lights.enabled)
+        initLighting();
 }
 
 function initGeometry() {
+    
+    /** @type {THREE.Object3D[]} */
     let objects = [];
 
     let geometry;
@@ -78,31 +100,43 @@ function initGeometry() {
 
     mesh = new THREE.Mesh(geometry, material)
     mesh.position.set(0, 0, 0);
+    mesh.name = "default-box";
+
     objects.push(mesh);
 
     //Room
-    geometry = new THREE.BoxGeometry(10, 4, 10);
+    geometry = new THREE.BoxGeometry(10, 4, 10, 25, 25, 25);
     material = new THREE.MeshLambertMaterial({color : 0x4286f4, side : THREE.BackSide});
     mesh = new THREE.Mesh(geometry, material);
+    mesh.name = "Room";
 
     mesh.receiveShadow = true;
 
     objects.push(mesh);
 
-    //TODO: PLACE THIS SOMEWHERE ELSE
-    let ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    objects.push(ambientLight);
-
-    let pointLight = new THREE.PointLight(0xffffff, 0.8);
-    pointLight.position.set(0, 3.8, 0);
-    objects.push(pointLight);
-
     addToScene(objects);
+}
+
+function initLighting() {
+    let lights = [];
+
+    if(SETTINGS.lights.ambient) {
+        let ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        lights.push(ambientLight);
+    }
+
+    if(SETTINGS.lights.point) {
+        let pointLight = new THREE.PointLight(0xffffff, 0.8, 7.5, 1);
+        pointLight.position.set(0, 0, 0);
+        lights.push(pointLight);
+    }
+
+    addToScene(lights);
 }
 
 /**
  * 
- * @param {THREE.Mesh[]} objects 
+ * @param {THREE.Object3D[]} objects 
  */
 function addToScene(objects) {
     objects.forEach(function(mesh) {
@@ -128,4 +162,4 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-init();
+window.onload = init;
