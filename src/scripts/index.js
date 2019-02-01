@@ -37,6 +37,10 @@ let height;
 let width;
 let aspect;
 
+//Global objects
+/** @type {THREE.PointLight} */
+    let pointLight;
+
 /**
  * Initialize website graphics
  */
@@ -120,7 +124,7 @@ function initGeometry() {
     mesh.name = "Room";
 
     room.add(mesh);
-    
+
     // TODO: Write a shader so that the interior wireframe fades into being visible as it gets farther away
     room.add(createWireframe(mesh, 0x4286f4, false));
 
@@ -223,7 +227,7 @@ function initLighting() {
     }
 
     if(SETTINGS.lights.point) {
-        let pointLight = new THREE.PointLight(0xffffff, 0.8, 7.5, 1);
+        pointLight = new THREE.PointLight(0xffffff, 0.8, 7.5, 1);
         pointLight.position.set(0, 0, 0);
         lights.push(pointLight);
     }
@@ -253,8 +257,12 @@ function onWindowResize(event) {
     renderer.setSize(width, height);
 }
 
-function animate() {
+function animate(timestamp) {
     renderer.render(scene, camera);
+
+    //Pulsing point light
+    pointLight.intensity = 0.3 * Math.abs(Math.sin(timestamp * 0.001)) + 0.5;
+    
     controls.update();
     requestAnimationFrame(animate);
 }
