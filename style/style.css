@@ -1,3 +1,9 @@
-html, body {
+body {
     font-family: 'Inconsolata', monospace;
+    margin : 0;
+}
+
+#container {
+    width : 100vw;
+    height : 100vh;
 }
