@@ -11,7 +11,7 @@ const SETTINGS = {
 };
 
 const CAMERA_SETTINGS = {
-    viewAngle   : 100,
+    viewAngle   : 70,
     near        : 0.1,
     far         : 1000
 };
@@ -30,6 +30,9 @@ const CAMERA_SETTINGS = {
 /** @type {HTMLElement} */
     let container;
 
+/** @type {THREE.OrbitControls} */
+    let controls;
+
 let height;
 let width;
 let aspect;
@@ -42,6 +45,8 @@ function init() {
 
     createCamera();
     createRenderer();
+
+    createControls();
 
     createScene();
 
@@ -66,7 +71,7 @@ function getDimensions() {
 
 function createCamera() {
     camera = new THREE.PerspectiveCamera(CAMERA_SETTINGS.viewAngle, aspect, CAMERA_SETTINGS.near, CAMERA_SETTINGS.far);
-    camera.position.set(0, 0, 4);
+    camera.position.set(0, 0, 5);
 }
 
 function createRenderer() {
@@ -75,6 +80,17 @@ function createRenderer() {
     renderer.setPixelRatio(window.devicePixelRatio);
 
     container.appendChild(renderer.domElement);
+}
+
+function createControls() {
+    controls = new THREE.OrbitControls( camera );  
+    controls.enablePan = false;
+    controls.enableDamping = true;
+    controls.enableZoom = false;
+    controls.maxPolarAngle = 1.39626;
+    controls.minPolarAngle = 1.39626;
+    controls.dampingFactor = 0.1;
+    controls.rotateSpeed = 0.05;
 }
 
 function createScene() {
@@ -159,6 +175,7 @@ function onWindowResize(event) {
 
 function animate() {
     renderer.render(scene, camera);
+    controls.update();
     requestAnimationFrame(animate);
 }
 
