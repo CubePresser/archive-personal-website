@@ -111,14 +111,7 @@ function initGeometry() {
     let material;
     let mesh;
 
-    geometry = new THREE.BoxGeometry(1, 1);
-    material = new THREE.MeshBasicMaterial({wireframe : true, color : 0xffffff});
-
-    mesh = new THREE.Mesh(geometry, material)
-    mesh.position.set(0, 0, 0);
-    mesh.name = "default-box";
-
-    objects.push(mesh);
+    let room = new THREE.Group();
 
     //Room
     geometry = new THREE.BoxGeometry(10, 4, 10, 25, 25, 25);
@@ -126,11 +119,34 @@ function initGeometry() {
     mesh = new THREE.Mesh(geometry, material);
     mesh.name = "Room";
 
-    mesh.receiveShadow = true;
+    room.add(mesh);
 
-    objects.push(mesh);
+    geometry = new THREE.CylinderGeometry(0.25, 1.5, 10, 12, 10);
+    material = new THREE.MeshLambertMaterial({color : 0x4286f4});
+    mesh = new THREE.Mesh(geometry, material);
 
-    addToScene(objects);
+    mesh.position.set(-5, 0, -5);
+
+    room.add(mesh);
+
+    mesh = mesh.clone();
+    mesh.position.set(5, 0, -5);
+
+    room.add(mesh);
+
+    mesh = mesh.clone();
+    mesh.position.set(5, 0, 5);
+
+    room.add(mesh);
+
+    mesh = mesh.clone();
+    mesh.position.set(-5, 0, 5);
+
+    room.add(mesh);
+
+    objects.push(room);
+
+    addObjectsToScene(objects);
 }
 
 function initLighting() {
@@ -147,17 +163,16 @@ function initLighting() {
         lights.push(pointLight);
     }
 
-    addToScene(lights);
+    addObjectsToScene(lights);
 }
 
 /**
  * 
  * @param {THREE.Object3D[]} objects 
  */
-function addToScene(objects) {
+function addObjectsToScene(objects) {
     objects.forEach(function(mesh) {
         scene.add(mesh);
-        console.log(mesh);
     });
 }
 
