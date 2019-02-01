@@ -11,7 +11,7 @@ header h1 {
     left: 50%;
     transform: translate(-50%, -50%);
 
-    color: greenyellow;
+    color: #42f457;
     text-shadow: greenyellow 0 0 10px;
   }
 

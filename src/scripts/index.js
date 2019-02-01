@@ -113,13 +113,16 @@ function initGeometry() {
 
     let room = new THREE.Group();
 
-    //Room
-    geometry = new THREE.BoxGeometry(10, 4, 10, 25, 25, 25);
+    //Room objects
+    geometry = new THREE.BoxGeometry(10, 4, 10, 15, 15, 15);
     material = new THREE.MeshLambertMaterial({color : 0x4286f4, side : THREE.BackSide});
     mesh = new THREE.Mesh(geometry, material);
     mesh.name = "Room";
 
     room.add(mesh);
+    
+    // TODO: Write a shader so that the interior wireframe fades into being visible as it gets farther away
+    room.add(createWireframe(mesh, 0x4286f4, false));
 
     geometry = new THREE.CylinderGeometry(0.25, 1.5, 10, 12, 10);
     material = new THREE.MeshLambertMaterial({color : 0x4286f4});
@@ -128,25 +131,87 @@ function initGeometry() {
     mesh.position.set(-5, 0, -5);
 
     room.add(mesh);
+    room.add(createEdgeframe(mesh, 0x4286f4));
 
     mesh = mesh.clone();
     mesh.position.set(5, 0, -5);
 
     room.add(mesh);
+    room.add(createEdgeframe(mesh, 0x4286f4));
 
     mesh = mesh.clone();
     mesh.position.set(5, 0, 5);
 
     room.add(mesh);
+    room.add(createEdgeframe(mesh, 0x4286f4));
 
     mesh = mesh.clone();
     mesh.position.set(-5, 0, 5);
 
     room.add(mesh);
+    room.add(createEdgeframe(mesh, 0x4286f4));
+
+    material = new THREE.MeshLambertMaterial({color : 0x4286f4, emissive : 0x4286f4, emissiveIntensity : 0.2});
+
+    //Top cylinder
+    geometry = new THREE.CylinderGeometry(2, 0.25, 2, 12, 10);
+    mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(0, 2, 0);
+
+    room.add(mesh);
+    room.add(createEdgeframe(mesh, 0x4286f4));
+
+    //Bottom cylinder
+    geometry = new THREE.CylinderGeometry(0.25, 2, 2, 12, 10);
+    mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(0, -2, 0);
+
+    room.add(mesh);
+    room.add(createEdgeframe(mesh, 0x4286f4));
 
     objects.push(room);
 
     addObjectsToScene(objects);
+}
+
+/**
+ * Creates a wireframe mesh of the given mesh
+ * @param   {THREE.Mesh} mesh
+ * @param   {THREE.Color} color
+ * @param   {bool} interior - True : Interior - False : Exterior
+ * @returns {THREE.LineSegments} THREE.LineSegments
+ */
+function createWireframe(mesh, color, interior) {
+    let geo = new THREE.WireframeGeometry(mesh.geometry);
+
+    let mat = new THREE.LineBasicMaterial({color : color});
+
+    let wireframe = new THREE.LineSegments(geo, mat);
+
+    if(interior)
+        wireframe.scale.multiplyScalar(0.999);
+    else
+        wireframe.scale.multiplyScalar(1.001);
+
+    wireframe.position.copy(mesh.position);
+    return wireframe;
+}
+
+/**
+ * Creates an outline of the edges on a given mesh
+ * @param   {THREE.Mesh} mesh 
+ * @param   {THREE.Color} color 
+ * @returns {THREE.LineSegments} THREE.LineSegments
+ */
+function createEdgeframe(mesh, color)
+{
+    let geo = new THREE.EdgesGeometry(mesh.geometry);
+
+    let mat = new THREE.LineBasicMaterial({color : color});
+    
+    let edges = new THREE.LineSegments(geo, mat);
+    edges.position.copy(mesh.position);
+    return edges;
 }
 
 function initLighting() {
