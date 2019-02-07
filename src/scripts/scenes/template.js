@@ -9,7 +9,7 @@ const SETTINGS = {
 
 };
 
-export class Template {
+export class Template extends Room {
     constructor(renderer, camera) {
         super(renderer, camera);
     }
