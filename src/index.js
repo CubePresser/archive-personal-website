@@ -2,6 +2,8 @@
  * @author jonesjonathan
  */
 
+import THREE from './three';
+
 const SETTINGS = {
     lights : {
         enabled     : true,

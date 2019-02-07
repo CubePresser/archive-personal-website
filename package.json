@@ -1,5 +1,25 @@
 {
+  "name": "jonesjonathan.github.io",
+  "version": "1.0.0",
+  "description": "{Cubepresser} Jonathan Jones personal 3D website.",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: No test specified\" && exit 1",
+    "dev": "parcel ./src/index.html --out-dir ./dev --open",
+    "build": "parcel build ./src/index.html --public-url ./dist && move-cli ./dist/index.html ./index.html"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Jonathan Jones",
+    "email": "cubepresser@gmail.com",
+    "url": "https://github.com/jonesjonathan"
+  },
   "devDependencies": {
-    "@types/three": "0.93.13"
+    "move-cli": "^1.2.0",
+    "parcel-bundler": "^1.11.0",
+    "parcel-plugin-clean-dist": "0.0.6"
+  },
+  "dependencies": {
+    "three": "^0.101.1"
   }
 }
