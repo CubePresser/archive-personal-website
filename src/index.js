@@ -35,6 +35,12 @@ const CAMERA_SETTINGS = {
 /** @type {THREE.OrbitControls} */
     let controls;
 
+/** @type {THREE.Raycaster} */
+    let raycaster = new THREE.Raycaster();
+
+/** @type {THREE.Vector2} */
+    let mouse = new THREE.Vector2();
+
 let height;
 let width;
 let aspect;
@@ -42,6 +48,9 @@ let aspect;
 //Global objects
 /** @type {THREE.PointLight} */
     let pointLight;
+
+/** @type {THREE.Group} */
+    let linkCubes; 
 
 /**
  * Initialize website graphics
@@ -103,6 +112,7 @@ function createScene() {
     scene = new THREE.Scene();
 
     initGeometry();
+    initLinkCubes();
 
     if(SETTINGS.lights.enabled)
         initLighting();
@@ -166,7 +176,7 @@ function initGeometry() {
 
     room.add(mesh);
     room.add(createEdgeframe(mesh, 0x4286f4));
-
+    
     //Bottom cylinder
     geometry = new THREE.CylinderGeometry(0.25, 2, 2, 12, 10);
     mesh = new THREE.Mesh(geometry, material);
@@ -178,6 +188,30 @@ function initGeometry() {
     objects.push(room);
 
     addObjectsToScene(objects);
+}
+
+function initLinkCubes() {
+    linkCubes = new THREE.Group();
+
+    let geometry = new THREE.CubeGeometry(0.5, 0.5, 0.5, 10, 10, 10);
+    let material = new THREE.MeshStandardMaterial({color : 0xf4b042});
+
+    let mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(0, -0.2, -2);
+    mesh.name = "Link-1";
+
+    linkCubes.add(mesh);
+    linkCubes.add(createEdgeframe(mesh, 0xffffff))
+
+    mesh = mesh.clone(false);
+    mesh.rotateY(3.14159);
+    mesh.position.set(0, -0.2, 2);
+    mesh.name = "Link-2";
+
+    linkCubes.add(mesh);
+    linkCubes.add(createEdgeframe(mesh, 0xffffff))
+    
+    scene.add(linkCubes);
 }
 
 /**
@@ -194,11 +228,14 @@ function createWireframe(mesh, color, interior) {
 
     let wireframe = new THREE.LineSegments(geo, mat);
 
+    wireframe.scale.copy(mesh.scale);
+
     if(interior)
         wireframe.scale.multiplyScalar(0.999);
     else
         wireframe.scale.multiplyScalar(1.001);
 
+    wireframe.rotation.copy(mesh.rotation);
     wireframe.position.copy(mesh.position);
     return wireframe;
 }
@@ -216,6 +253,9 @@ function createEdgeframe(mesh, color)
     let mat = new THREE.LineBasicMaterial({color : color});
     
     let edges = new THREE.LineSegments(geo, mat);
+
+    edges.scale.copy(mesh.scale);
+    edges.rotation.copy(mesh.rotation);
     edges.position.copy(mesh.position);
     return edges;
 }
@@ -249,6 +289,7 @@ function addObjectsToScene(objects) {
 
 function initEventListeners() {
     window.addEventListener('resize', onWindowResize, false);
+    window.addEventListener('mousemove', onMouseMove, false);
 }
 
 function onWindowResize(event) {
@@ -259,11 +300,32 @@ function onWindowResize(event) {
     renderer.setSize(width, height);
 }
 
+function onMouseMove( event ) {
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    
+    // update the picking ray with the camera and mouse position
+	raycaster.setFromCamera( mouse, camera );
+
+	// calculate objects intersecting the picking ray
+    let intersects = raycaster.intersectObjects([linkCubes.getObjectByName("Link-1"), linkCubes.getObjectByName("Link-2")], false);
+
+    if(!intersects.length)
+        document.getElementById("display-text").innerText = "";
+    else 
+        document.getElementById("display-text").innerText = intersects[0].object.name;
+}
+
 function animate(timestamp) {
     renderer.render(scene, camera);
 
     //Pulsing point light
     pointLight.intensity = 0.3 * Math.abs(Math.sin(timestamp * 0.001)) + 0.5;
+
+    //Rotate link cubes
+    linkCubes.children.forEach(function(cube) {
+        cube.rotateX(0.01);
+    });
     
     controls.update();
     requestAnimationFrame(animate);
