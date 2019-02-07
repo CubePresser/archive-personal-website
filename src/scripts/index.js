@@ -5,6 +5,7 @@
 import THREE from './three';
 import {Room} from './scenes/room';
 import {Home} from './scenes/home';
+import { Cube } from './scenes/cube';
 
 const CAMERA_SETTINGS = {
     viewAngle   : 70,
@@ -35,7 +36,7 @@ class Site {
 
         this.initEventListeners();
 
-        this.currentRoom = new Home(this.renderer, this.camera);
+        this.currentRoom = new Cube(this.renderer, this.camera);
         this.currentRoom.render();
     }
 
