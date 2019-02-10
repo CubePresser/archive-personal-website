@@ -6,8 +6,7 @@ import THREE from '../three';
 import {Room} from './room';
 
 import { Reactor } from "./reactor";
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
-import { ifError } from 'assert';
+
 const rooms = [
     Reactor
 ];
@@ -121,7 +120,7 @@ export class Home extends Room {
             clone.translateZ(numPanels * 2);
 
             //Make name of this panel equal to the name of the constructor for that room
-            clone.name = rooms[i].name;
+            clone.name = "Scene-" + i;
 
             //Add room constructor to this panel
             clone.construct = rooms[i];
@@ -171,7 +170,7 @@ export class Home extends Room {
 
     onDblClick() {
         if(this.intersection) {
-            this.changeRoom(this.intersection.construct);
+            this.changeRoom(this.intersection.construct, this.intersection.name);
         }
     }
 

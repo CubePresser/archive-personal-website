@@ -4,7 +4,6 @@
 
 import THREE from '../three';
 import {Room} from './room';
-import {Home} from './home';
 
 const CAMERA_SETTINGS = {
     viewAngle   : 50,

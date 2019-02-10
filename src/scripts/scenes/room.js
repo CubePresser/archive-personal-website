@@ -10,6 +10,7 @@ export class Room {
         this.renderer = renderer;
         this.render = this.render.bind(this);
 
+        this.name = "";
         this.camera = null;
 
         this.scene = new THREE.Scene();
@@ -46,7 +47,7 @@ export class Room {
     /**
      * Removes all event listeners associated with this room
      */
-    _removeEventListeners() {
+    removeEventListeners() {
         for(let i = 0; i < this.eventListeners.length; i++) {
             const eventListener = this.eventListeners[i];
             eventListener.target.removeEventListener(
@@ -61,10 +62,13 @@ export class Room {
         this.camera.updateProjectionMatrix();
     }
 
-    changeRoom(construct) {
+    changeRoom(construct, name) {
         //Remove all associated event listeners when moving to the next room so they don't carry over
-        this._removeEventListeners();
         const event = new CustomEvent('changeRoom', {detail : construct});
+
+        const newPath = "/#" + name;
+        window.history.pushState({}, newPath, window.location.origin + newPath);
+
         window.dispatchEvent(event);
     }
 
