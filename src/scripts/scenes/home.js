@@ -6,6 +6,8 @@ import THREE from '../three';
 import {Room} from './room';
 
 import { Reactor } from "./reactor";
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
+import { ifError } from 'assert';
 const rooms = [
     Reactor
 ];
@@ -27,13 +29,32 @@ export class Home extends Room {
     constructor(renderer) {
         super(renderer);
 
-        this._initCamera();
+        /** @type {THREE.PerspectiveCamera} */
+        this.camera;
 
-        //Room Panels
+        /** @type {THREE.OrbitControls} */
+        this.controls;
+
+        /** @type {THREE.Raycaster} */
+        this.raycaster;
+        /** @type {THREE.Object3D}*/
+        this.intersection;
+
+        this.mouse = new THREE.Vector2(-100, -100);
+        this.mouseDown = false;
+        this.onMouseMove = this.onMouseMove.bind(this);
+        this.onMouseDown = this.onMouseDown.bind(this);
+        this.onMouseUp   = this.onMouseUp.bind(this);
+        this.onDblClick  = this.onDblClick.bind(this);
+
+        /** @type {THREE.Group} */
         this._roomPanels;
-        this._initGeometry();
 
-        this._controls = this._createControls();
+        this._initCamera();
+        this._createControls();
+        this._initRaycaster();
+
+        this._initGeometry();
 
         this._initEventListeners();
     }
@@ -50,6 +71,24 @@ export class Home extends Room {
         this.camera.updateProjectionMatrix();
 
         this.scene.add(this.camera);
+    }
+
+    _createControls() {
+        const controls = new THREE.OrbitControls( this.camera );  
+        controls.enablePan = false;
+        controls.enableDamping = true;
+        controls.enableZoom = false;
+        controls.maxPolarAngle = Math.PI / 2;
+        controls.minPolarAngle = Math.PI / 2;
+        controls.dampingFactor = 0.1;
+        controls.rotateSpeed = 0.1 / numPanels;
+
+        this.controls = controls;
+    }
+
+    _initRaycaster() {
+        this.raycaster = new THREE.Raycaster();
+        this.raycaster.far = 20;
     }
 
     _initGeometry() {
@@ -106,25 +145,52 @@ export class Home extends Room {
         this.camera.add(cameraPointLight);
     }
 
-    _createControls() {
-        const controls = new THREE.OrbitControls( this.camera );  
-        controls.enablePan = false;
-        controls.enableDamping = true;
-        controls.enableZoom = false;
-        controls.maxPolarAngle = Math.PI / 2;
-        controls.minPolarAngle = Math.PI / 2;
-        controls.dampingFactor = 0.1;
-        controls.rotateSpeed = 0.1 / numPanels;
-
-        return controls;
+    _initEventListeners() {
+        this._addEventListener(window, 'mousemove', this.onMouseMove);
+        this._addEventListener(window, 'mousedown', this.onMouseDown);
+        this._addEventListener(window, 'mouseup', this.onMouseUp);
+        this._addEventListener(window, 'dblclick', this.onDblClick);
+    }
+    
+    onMouseMove(event) {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     }
 
-    _initEventListeners() {
+    onMouseDown(event) {
+        if(event.which == 1 && this.intersection) { 
+            this.mouseDown = true; 
+        }
+    }
+
+    onMouseUp(event) {
+        if(event.which == 1 && this.mouseDown && this.intersection) {
+            this.intersection.material.color.set(0x00ff00);
+        }
+    }
+
+    onDblClick() {
+        if(this.intersection) {
+            this.changeRoom(this.intersection.construct);
+        }
+    }
+
+    _rayEvaluate() {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this._roomPanels.children);
+
+        if(intersects.length) {
+            this.intersection = intersects[0].object;
+        } else {
+            if(this.intersection) { this.intersection.material.color.setRGB(0.5, 0.5, 0.5); }
+            this.intersection = null;
+        }
     }
 
     //Called externally, updates scene every frame
     _animate(timestamp) {
         const delta = this.clock.getDelta();
-        this._controls.update();
+        this._rayEvaluate();
+        this.controls.update();
     }
 };
