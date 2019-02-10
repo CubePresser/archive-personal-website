@@ -4,6 +4,13 @@
 
 import THREE from '../three';
 import {Room} from './room';
+import {Home} from './home';
+
+const CAMERA_SETTINGS = {
+    viewAngle   : 50,
+    near        : 0.1,
+    far         : 1000
+};
 
 const SETTINGS = {
     lights : {
@@ -14,10 +21,10 @@ const SETTINGS = {
 };
 
 export class Reactor extends Room {
-    constructor(renderer, camera) {
-        super(renderer, camera);
+    constructor(renderer) {
+        super(renderer);
 
-        this.camera.position.set(0, 0, 5);
+        this._initCamera();
 
         /** @type {THREE.OrbitControls} */
         this.controls = this._createControls();
@@ -40,6 +47,18 @@ export class Reactor extends Room {
 
         this._initLighting();
         this._initEventListeners();
+    }
+
+    _initCamera() {
+        const gl = this.renderer.context;
+        this.camera = new THREE.PerspectiveCamera(
+            CAMERA_SETTINGS.viewAngle, 
+            gl.drawingBufferWidth / gl.drawingBufferHeight,
+            CAMERA_SETTINGS.near,
+            CAMERA_SETTINGS.far
+        );
+        this.camera.position.set(0, 0, 5);
+        this.camera.updateProjectionMatrix();
     }
 
     _createControls() {
@@ -170,7 +189,7 @@ export class Reactor extends Room {
 
     _initEventListeners() {
         this.onMouseMove = this.onMouseMove.bind(this);
-        window.addEventListener('mousemove', this.onMouseMove, false);
+        this._addEventListener(window, 'mousemove', this.onMouseMove);
     }
 
     onMouseMove( event ) {
@@ -185,8 +204,9 @@ export class Reactor extends Room {
     
         if(!intersects.length)
             document.getElementById("display-text").innerText = "";
-        else 
+        else  {
             document.getElementById("display-text").innerText = intersects[0].object.name;
+        }
     }
 
     _animate(timestamp) {

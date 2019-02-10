@@ -4,7 +4,7 @@
 
 import THREE from './three';
 import {Room} from './scenes/room';
-import {rooms} from './scenes';
+import {Home} from './scenes/home';
 
 class Site {
     constructor() {
@@ -14,10 +14,6 @@ class Site {
         /** @type {THREE.WebGLRenderer} */
         this.renderer;
 
-        /** @type {THREE.PerspectiveCamera} */
-        this.camera;
-        this.aspect;
-
         /** @type {HTMLElement} */
         this.container;
         this.width;
@@ -25,11 +21,10 @@ class Site {
 
         this.getContainer();
         this.createRenderer();
-        this.createCamera();
 
         this.initEventListeners();
 
-        this.currentRoom = new rooms[0](this.renderer, this.camera);
+        this.currentRoom = new Home(this.renderer);
         this.currentRoom.render();
     }
 
@@ -41,7 +36,6 @@ class Site {
     getDimensions() {
         this.width = this.container.clientWidth;
         this.height = this.container.clientHeight;
-        this.aspect = this.width / this.height;
     }
 
     createRenderer() {
@@ -52,23 +46,24 @@ class Site {
         this.container.appendChild(this.renderer.domElement);
     }
 
-    createCamera() {
-        this.camera = new THREE.PerspectiveCamera(50, this.aspect, 0.01, 1000);
-    }
-
     initEventListeners() {
         this.onWindowResize = this.onWindowResize.bind(this);
 
         window.addEventListener('resize', this.onWindowResize, false);
+        window.addEventListener('changeRoom', this.onChangeRoom.bind(this), true);
     }
 
     onWindowResize(event) {
         this.getDimensions();
-        this.camera.aspect = this.aspect;
-        this.camera.updateProjectionMatrix();
-    
+        this.currentRoom.updateCameraAspect(this.width / this.height);
         this.renderer.setSize(this.width, this.height);
     }
-}
 
+    onChangeRoom(event) {
+        this.currentRoom.isActive = false;
+        this.currentRoom = new event.detail(this.renderer, this.camera);
+        this.currentRoom.render();
+    }
+}
+  
 new Site();

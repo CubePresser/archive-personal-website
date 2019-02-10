@@ -5,13 +5,18 @@
 import THREE from '../three';
 import {Room} from './room';
 
+import { Reactor } from "./reactor";
+const rooms = [
+    Reactor
+];
+
 const CAMERA_SETTINGS = {
     viewAngle   : 50,
     near        : 0.1,
     far         : 1000
 };
 
-const numPanels = 10;
+const numPanels = rooms.length;
 
 export class Home extends Room {
     /**
@@ -19,8 +24,8 @@ export class Home extends Room {
      * @param {THREE.WebGLRenderer} renderer 
      * @param {THREE.PerspectiveCamera} camera 
      */
-    constructor(renderer, camera) {
-        super(renderer, camera);
+    constructor(renderer) {
+        super(renderer);
 
         this._initCamera();
 
@@ -29,12 +34,18 @@ export class Home extends Room {
         this._initGeometry();
 
         this._controls = this._createControls();
+
+        this._initEventListeners();
     }
 
     _initCamera() {
-        this.camera.fov = CAMERA_SETTINGS.viewAngle;
-        this.camera.near = CAMERA_SETTINGS.near;
-        this.camera.far = CAMERA_SETTINGS.far;
+        const gl = this.renderer.context;
+        this.camera = new THREE.PerspectiveCamera(
+            CAMERA_SETTINGS.viewAngle, 
+            gl.drawingBufferWidth / gl.drawingBufferHeight,
+            CAMERA_SETTINGS.near,
+            CAMERA_SETTINGS.far
+        );
         this.camera.position.set(0, 0, (numPanels * 2) + 10);
         this.camera.updateProjectionMatrix();
 
@@ -69,7 +80,13 @@ export class Home extends Room {
             const clone = panel.clone();
             clone.rotateY(rotOffset);
             clone.translateZ(numPanels * 2);
-            clone.name = "panel-" + i;
+
+            //Make name of this panel equal to the name of the constructor for that room
+            clone.name = rooms[i].name;
+
+            //Add room constructor to this panel
+            clone.construct = rooms[i];
+
             this._roomPanels.add(clone);
         }
 
@@ -102,10 +119,12 @@ export class Home extends Room {
         return controls;
     }
 
+    _initEventListeners() {
+    }
+
     //Called externally, updates scene every frame
     _animate(timestamp) {
         const delta = this.clock.getDelta();
-        //this._roomPanels.rotation.y += Math.PI / numPanels * delta;
         this._controls.update();
     }
 };
