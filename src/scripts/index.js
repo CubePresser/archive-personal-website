@@ -51,6 +51,7 @@ class Site {
 
         window.addEventListener('resize', this.onWindowResize, false);
         window.addEventListener('changeRoom', this.onChangeRoom.bind(this), true);
+        window.onpopstate = this.onPopState.bind(this);
     }
 
     onWindowResize(event) {
@@ -59,7 +60,14 @@ class Site {
         this.renderer.setSize(this.width, this.height);
     }
 
+    onPopState() {
+        this.onChangeRoom({detail : Home});
+    }
+
     onChangeRoom(event) {
+        const newPath = "/" + event.detail.name;
+        window.history.pushState({}, newPath, window.location.origin + newPath);
+
         this.currentRoom.isActive = false;
         this.currentRoom = new event.detail(this.renderer, this.camera);
         this.currentRoom.render();
