@@ -6,12 +6,6 @@ import THREE from './three';
 import {Room} from './scenes/room';
 import {Selection} from './scenes/selection';
 
-const CAMERA_SETTINGS = {
-    viewAngle   : 70,
-    near        : 0.1,
-    far         : 1000
-};
-
 class Site {
     constructor() {
         /** @type {Room} */
@@ -59,7 +53,7 @@ class Site {
     }
 
     createCamera() {
-        this.camera = new THREE.PerspectiveCamera(CAMERA_SETTINGS.viewAngle, this.aspect, CAMERA_SETTINGS.near, CAMERA_SETTINGS.far);
+        this.camera = new THREE.PerspectiveCamera(50, this.aspect, 0.01, 1000);
     }
 
     initEventListeners() {

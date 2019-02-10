@@ -8,11 +8,15 @@ export class Room {
     constructor(renderer, camera) {
         this.renderer = renderer;
         this.camera = camera;
-
         this.render = this.render.bind(this);
 
         this.scene = new THREE.Scene();
+        this.clock = new THREE.Clock(true);
+
+        this.id = 0;
     };
+
+    _initCamera() {}
 
     _animate(timestamp) {}
 
