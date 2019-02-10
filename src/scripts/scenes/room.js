@@ -5,22 +5,78 @@
 import THREE from '../three';
 
 export class Room {
-    constructor(renderer, camera) {
-        this.renderer = renderer;
-        this.camera = camera;
 
+    constructor(renderer) {
+        this.renderer = renderer;
         this.render = this.render.bind(this);
 
+        this.camera = null;
+
         this.scene = new THREE.Scene();
+        this.isActive = true;
+        this.clock = new THREE.Clock(true);
+
+        this.id = 0;
+
+        this.eventListeners = [];
     };
+
+    _initCamera() {}
+
+    /**
+     * Initializes all event listeners associated with this room
+     */
+    _initEventListeners() {}
+
+    /**
+     * 
+     * @param {HTMLElement} target 
+     * @param {String} type 
+     * @param {Function} listener 
+     */
+    _addEventListener(target, type, listener) {
+        target.addEventListener(type, listener);
+        this.eventListeners.push({
+            target : target,
+            type : type,
+            listener : listener
+        });
+    }
+
+    /**
+     * Removes all event listeners associated with this room
+     */
+    _removeEventListeners() {
+        for(let i = 0; i < this.eventListeners.length; i++) {
+            const eventListener = this.eventListeners[i];
+            eventListener.target.removeEventListener(
+                eventListener.type,
+                eventListener.listener
+            );
+        }
+    }
+
+    updateCameraAspect(aspect) {
+        this.camera.aspect = aspect;
+        this.camera.updateProjectionMatrix();
+    }
+
+    changeRoom(construct) {
+        //Remove all associated event listeners when moving to the next room so they don't carry over
+        this._removeEventListeners();
+        const event = new CustomEvent('changeRoom', {detail : construct});
+        window.dispatchEvent(event);
+    }
 
     _animate(timestamp) {}
 
     render(timestamp) {
-        this._animate(timestamp);
-
-        this.renderer.render(this.scene, this.camera);
-        requestAnimationFrame(this.render);
+        if(this.isActive) {
+            this._animate(timestamp);
+            this.renderer.render(this.scene, this.camera);
+            return requestAnimationFrame(this.render);
+        }
+        return null;
     }
 
     /**

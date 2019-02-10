@@ -5,13 +5,6 @@
 import THREE from './three';
 import {Room} from './scenes/room';
 import {Home} from './scenes/home';
-import { Cube } from './scenes/cube';
-
-const CAMERA_SETTINGS = {
-    viewAngle   : 70,
-    near        : 0.1,
-    far         : 1000
-};
 
 class Site {
     constructor() {
@@ -21,10 +14,6 @@ class Site {
         /** @type {THREE.WebGLRenderer} */
         this.renderer;
 
-        /** @type {THREE.PerspectiveCamera} */
-        this.camera;
-        this.aspect;
-
         /** @type {HTMLElement} */
         this.container;
         this.width;
@@ -32,11 +21,10 @@ class Site {
 
         this.getContainer();
         this.createRenderer();
-        this.createCamera();
 
         this.initEventListeners();
 
-        this.currentRoom = new Cube(this.renderer, this.camera);
+        this.currentRoom = new Home(this.renderer);
         this.currentRoom.render();
     }
 
@@ -48,7 +36,6 @@ class Site {
     getDimensions() {
         this.width = this.container.clientWidth;
         this.height = this.container.clientHeight;
-        this.aspect = this.width / this.height;
     }
 
     createRenderer() {
@@ -59,23 +46,32 @@ class Site {
         this.container.appendChild(this.renderer.domElement);
     }
 
-    createCamera() {
-        this.camera = new THREE.PerspectiveCamera(CAMERA_SETTINGS.viewAngle, this.aspect, CAMERA_SETTINGS.near, CAMERA_SETTINGS.far);
-    }
-
     initEventListeners() {
         this.onWindowResize = this.onWindowResize.bind(this);
 
         window.addEventListener('resize', this.onWindowResize, false);
+        window.addEventListener('changeRoom', this.onChangeRoom.bind(this), true);
+        window.onpopstate = this.onPopState.bind(this);
     }
 
     onWindowResize(event) {
         this.getDimensions();
-        this.camera.aspect = this.aspect;
-        this.camera.updateProjectionMatrix();
-    
+        this.currentRoom.updateCameraAspect(this.width / this.height);
         this.renderer.setSize(this.width, this.height);
     }
-}
 
+    onPopState() {
+        this.onChangeRoom({detail : Home});
+    }
+
+    onChangeRoom(event) {
+        const newPath = "/" + event.detail.name;
+        window.history.pushState({}, newPath, window.location.origin + newPath);
+
+        this.currentRoom.isActive = false;
+        this.currentRoom = new event.detail(this.renderer, this.camera);
+        this.currentRoom.render();
+    }
+}
+  
 new Site();

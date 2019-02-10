@@ -5,41 +5,72 @@
 import THREE from '../three';
 import {Room} from './room';
 
-const SETTINGS = {
-    lights : {
-        enabled     : true,
-        ambient     : true,
-        point       : true
-    }
+import { Reactor } from "./reactor";
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
+import { ifError } from 'assert';
+const rooms = [
+    Reactor
+];
+
+const CAMERA_SETTINGS = {
+    viewAngle   : 50,
+    near        : 0.1,
+    far         : 1000
 };
 
-export class Home extends Room {
-    constructor(renderer, camera) {
-        super(renderer, camera);
+const numPanels = rooms.length;
 
-        this.camera.position.set(0, 0, 5);
+export class Home extends Room {
+    /**
+     * 
+     * @param {THREE.WebGLRenderer} renderer 
+     * @param {THREE.PerspectiveCamera} camera 
+     */
+    constructor(renderer) {
+        super(renderer);
+
+        /** @type {THREE.PerspectiveCamera} */
+        this.camera;
 
         /** @type {THREE.OrbitControls} */
-        this.controls = this._createControls();
+        this.controls;
 
         /** @type {THREE.Raycaster} */
-        this.raycaster = new THREE.Raycaster();
-    
-        /** @type {THREE.Vector2} */
-        this.mouse = new THREE.Vector2();
+        this.raycaster;
+        /** @type {THREE.Object3D}*/
+        this.intersection;
 
-        /** @type {THREE.PointLight} */
-        this.pointLight;
+        this.mouse = new THREE.Vector2(-100, -100);
+        this.mouseDown = false;
+        this.onMouseMove = this.onMouseMove.bind(this);
+        this.onMouseDown = this.onMouseDown.bind(this);
+        this.onMouseUp   = this.onMouseUp.bind(this);
+        this.onDblClick  = this.onDblClick.bind(this);
 
         /** @type {THREE.Group} */
-        this.linkCubes; 
+        this._roomPanels;
 
+        this._initCamera();
         this._createControls();
-        this._initGeometry();
-        this._initLinkCubes();
+        this._initRaycaster();
 
-        this._initLighting();
+        this._initGeometry();
+
         this._initEventListeners();
+    }
+
+    _initCamera() {
+        const gl = this.renderer.context;
+        this.camera = new THREE.PerspectiveCamera(
+            CAMERA_SETTINGS.viewAngle, 
+            gl.drawingBufferWidth / gl.drawingBufferHeight,
+            CAMERA_SETTINGS.near,
+            CAMERA_SETTINGS.far
+        );
+        this.camera.position.set(0, 0, (numPanels * 2) + 10);
+        this.camera.updateProjectionMatrix();
+
+        this.scene.add(this.camera);
     }
 
     _createControls() {
@@ -47,157 +78,119 @@ export class Home extends Room {
         controls.enablePan = false;
         controls.enableDamping = true;
         controls.enableZoom = false;
-        controls.maxPolarAngle = 1.39626;
-        controls.minPolarAngle = 1.39626;
+        controls.maxPolarAngle = Math.PI / 2;
+        controls.minPolarAngle = Math.PI / 2;
         controls.dampingFactor = 0.1;
-        controls.rotateSpeed = 0.022;
+        controls.rotateSpeed = 0.1 / numPanels;
 
-        return controls;
+        this.controls = controls;
+    }
+
+    _initRaycaster() {
+        this.raycaster = new THREE.Raycaster();
+        this.raycaster.far = 20;
     }
 
     _initGeometry() {
-    
-        /** @type {THREE.Object3D[]} */
-        let objects = [];
-    
-        let geometry;
-        let material;
-        let mesh;
-    
-        let room = new THREE.Group();
-    
-        //Room objects
-        geometry = new THREE.BoxGeometry(10, 4, 10, 15, 15, 15);
-        material = new THREE.MeshLambertMaterial({color : 0x4286f4, side : THREE.BackSide});
-        mesh = new THREE.Mesh(geometry, material);
-        mesh.name = "Room";
-    
-        room.add(mesh);
-    
-        // TODO: Write a shader so that the interior wireframe fades into being visible as it gets farther away
-        room.add(this._createWireframe(mesh, 0x4286f4, false));
-    
-        geometry = new THREE.CylinderGeometry(0.25, 1.5, 10, 12, 10);
-        material = new THREE.MeshLambertMaterial({color : 0x4286f4});
-        mesh = new THREE.Mesh(geometry, material);
-    
-        mesh.position.set(-5, 0, -5);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
-    
-        mesh = mesh.clone();
-        mesh.position.set(5, 0, -5);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
-    
-        mesh = mesh.clone();
-        mesh.position.set(5, 0, 5);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
-    
-        mesh = mesh.clone();
-        mesh.position.set(-5, 0, 5);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
-    
-        material = new THREE.MeshLambertMaterial({color : 0x4286f4, emissive : 0x4286f4, emissiveIntensity : 0.2});
-    
-        //Top cylinder
-        geometry = new THREE.CylinderGeometry(2, 0.25, 2, 12, 10);
-        mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(0, 2, 0);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
-        
-        //Bottom cylinder
-        geometry = new THREE.CylinderGeometry(0.25, 2, 2, 12, 10);
-        mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(0, -2, 0);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
-    
-        objects.push(room);
-    
-        this._addObjectsToScene(objects);
+        const groundGeo = new THREE.PlaneBufferGeometry(1000, 1000);
+        const groundMat = new THREE.MeshPhongMaterial();
+        groundMat.color.setRGB(1, 1, 1);
+
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.position.y = -10;
+        ground.rotation.x = -(Math.PI / 2);
+        this.scene.add(ground);
+
+        this._initLinks();
+        this._initLights();
     }
 
-    _initLinkCubes() {
-        this.linkCubes = new THREE.Group();
-    
-        let geometry = new THREE.CubeGeometry(0.5, 0.5, 0.5, 10, 10, 10);
-        let material = new THREE.MeshStandardMaterial({color : 0xf4b042});
-    
-        let mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(0, -0.2, -2);
-        mesh.name = "Link-1";
-    
-        this.linkCubes.add(mesh);
-        this.linkCubes.add(this._createEdgeframe(mesh, 0xffffff))
-    
-        mesh = mesh.clone(false);
-        mesh.rotateY(3.14159);
-        mesh.position.set(0, -0.2, 2);
-        mesh.name = "Link-2";
-    
-        this.linkCubes.add(mesh);
-        this.linkCubes.add(this._createEdgeframe(mesh, 0xffffff))
-        
-        this.scene.add(this.linkCubes);
+    _initLinks() {
+        this._roomPanels = new THREE.Group();
+
+        const panelGeo = new THREE.BoxBufferGeometry(6, 5, 0.25, 10, 10, 5);
+        const panelMat = new THREE.MeshPhongMaterial();
+        panelMat.color.setRGB(0.5, 0.5, 0.5);
+
+        const panel = new THREE.Mesh(panelGeo, panelMat);
+
+        for(let i = 0; i < numPanels; i++) {
+            const rotOffset = ( (2 * Math.PI) / (numPanels) ) * i;
+            const clone = panel.clone();
+            clone.rotateY(rotOffset);
+            clone.translateZ(numPanels * 2);
+
+            //Make name of this panel equal to the name of the constructor for that room
+            clone.name = rooms[i].name;
+
+            //Add room constructor to this panel
+            clone.construct = rooms[i];
+
+            this._roomPanels.add(clone);
+        }
+
+        this.scene.add(this._roomPanels);
     }
 
-    _initLighting() {
-        let lights = [];
-    
-        if(SETTINGS.lights.ambient) {
-            let ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-            lights.push(ambientLight);
-        }
-    
-        if(SETTINGS.lights.point) {
-            this.pointLight = new THREE.PointLight(0xffffff, 0.8, 7.5, 1);
-            this.pointLight.position.set(0, 0, 0);
-            lights.push(this.pointLight);
-        }
-    
-        this._addObjectsToScene(lights);
+    _initLights() {
+        const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+        ambient.color.setRGB(0.5, 0.5, 0.5);
+        this.scene.add(ambient);
+
+        const centerPointLight = new THREE.PointLight(0xffffff, 1, numPanels * 5);
+        centerPointLight.position.set(0, numPanels, 0);
+        this.scene.add(centerPointLight);
+
+        const cameraPointLight = new THREE.PointLight(0xffffff, 1.5, 50);
+        this.camera.add(cameraPointLight);
     }
 
     _initEventListeners() {
-        this.onMouseMove = this.onMouseMove.bind(this);
-        window.addEventListener('mousemove', this.onMouseMove, false);
+        this._addEventListener(window, 'mousemove', this.onMouseMove);
+        this._addEventListener(window, 'mousedown', this.onMouseDown);
+        this._addEventListener(window, 'mouseup', this.onMouseUp);
+        this._addEventListener(window, 'dblclick', this.onDblClick);
+    }
+    
+    onMouseMove(event) {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     }
 
-    onMouseMove( event ) {
-        this.mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-        this.mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-        
-        // update the picking ray with the camera and mouse position
-        this.raycaster.setFromCamera( this.mouse, this.camera );
-    
-        // calculate objects intersecting the picking ray
-        let intersects = this.raycaster.intersectObjects([this.linkCubes.getObjectByName("Link-1"), this.linkCubes.getObjectByName("Link-2")], false);
-    
-        if(!intersects.length)
-            document.getElementById("display-text").innerText = "";
-        else 
-            document.getElementById("display-text").innerText = intersects[0].object.name;
+    onMouseDown(event) {
+        if(event.which == 1 && this.intersection) { 
+            this.mouseDown = true; 
+        }
     }
 
+    onMouseUp(event) {
+        if(event.which == 1 && this.mouseDown && this.intersection) {
+            this.intersection.material.color.set(0x00ff00);
+        }
+    }
+
+    onDblClick() {
+        if(this.intersection) {
+            this.changeRoom(this.intersection.construct);
+        }
+    }
+
+    _rayEvaluate() {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this._roomPanels.children);
+
+        if(intersects.length) {
+            this.intersection = intersects[0].object;
+        } else {
+            if(this.intersection) { this.intersection.material.color.setRGB(0.5, 0.5, 0.5); }
+            this.intersection = null;
+        }
+    }
+
+    //Called externally, updates scene every frame
     _animate(timestamp) {
-        //Pulsing point light
-        this.pointLight.intensity = 0.3 * Math.abs(Math.sin(timestamp * 0.001)) + 0.5;
-
-        //Rotate link cubes
-        this.linkCubes.children.forEach(function(cube) {
-            cube.rotateX(0.01);
-        });
-    
+        const delta = this.clock.getDelta();
+        this._rayEvaluate();
         this.controls.update();
     }
 };
