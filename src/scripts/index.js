@@ -65,9 +65,7 @@ class Site {
     }
 
     onChangeRoom(event) {
-        const newPath = "/" + event.detail.name;
-        window.history.pushState({}, newPath, window.location.origin + newPath);
-
+        this.currentRoom.removeEventListeners();
         this.currentRoom.isActive = false;
         this.currentRoom = new event.detail(this.renderer, this.camera);
         this.currentRoom.render();
