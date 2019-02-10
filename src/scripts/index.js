@@ -4,7 +4,7 @@
 
 import THREE from './three';
 import {Room} from './scenes/room';
-import {Selection} from './scenes/selection';
+import {rooms} from './scenes';
 
 class Site {
     constructor() {
@@ -29,7 +29,7 @@ class Site {
 
         this.initEventListeners();
 
-        this.currentRoom = new Selection(this.renderer, this.camera);
+        this.currentRoom = new rooms[0](this.renderer, this.camera);
         this.currentRoom.render();
     }
 
