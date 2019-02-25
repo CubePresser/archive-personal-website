@@ -7,15 +7,19 @@ import {Room} from './room';
 
 import { Reactor } from "./reactor";
 
-const rooms = [
-    Reactor
-];
-
 const CAMERA_SETTINGS = {
     viewAngle   : 50,
     near        : 0.1,
     far         : 1000
 };
+
+const SETTINGS = {
+
+};
+
+const rooms = [
+    Reactor
+];
 
 const numPanels = rooms.length;
 

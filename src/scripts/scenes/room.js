@@ -10,24 +10,29 @@ export class Room {
         this.renderer = renderer;
         this.render = this.render.bind(this);
 
-        this.name = "";
-        this.camera = null;
-
         this.scene = new THREE.Scene();
         this.isActive = true;
         this.clock = new THREE.Clock(true);
 
-        this.id = 0;
-
+        //Holds all event listeners associated with the current room
         this.eventListeners = [];
     };
 
+    /** 
+     * Create an initialize values for scene camera
+    */
     _initCamera() {}
 
     /**
      * Initializes all event listeners associated with this room
      */
     _initEventListeners() {}
+
+    /**
+     * Called in render, defined in child, updates scene objects every frame
+     * @param {Number} timestamp 
+     */
+    _animate(timestamp) {}
 
     /**
      * 
@@ -71,8 +76,6 @@ export class Room {
 
         window.dispatchEvent(event);
     }
-
-    _animate(timestamp) {}
 
     render(timestamp) {
         if(this.isActive) {
