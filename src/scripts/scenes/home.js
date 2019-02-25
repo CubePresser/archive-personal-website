@@ -67,7 +67,7 @@ export class Home extends Room {
     }
 
     /** 
-     * Create an initialize values for scene camera
+     * Create and initialize values for scene camera
     */
     _initCamera() {
         const gl = this.renderer.context;

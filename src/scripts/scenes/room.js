@@ -7,11 +7,15 @@ import THREE from '../three';
 export class Room {
 
     constructor(renderer) {
+        /** @type {THREE.WebGLRenderer} */
         this.renderer = renderer;
         this.render = this.render.bind(this);
 
+        /** @type {THREE.Scene} */
         this.scene = new THREE.Scene();
         this.isActive = true;
+
+        /** @type {THREE.Clock} */
         this.clock = new THREE.Clock(true);
 
         //Holds all event listeners associated with the current room
@@ -19,7 +23,7 @@ export class Room {
     };
 
     /** 
-     * Create an initialize values for scene camera
+     * Create and initialize values for scene camera
     */
     _initCamera() {}
 

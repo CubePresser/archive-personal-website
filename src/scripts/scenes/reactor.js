@@ -28,26 +28,22 @@ export class Reactor extends Room {
         /** @type {THREE.OrbitControls} */
         this.controls = this._createControls();
 
-        /** @type {THREE.Raycaster} */
-        this.raycaster = new THREE.Raycaster();
-    
-        /** @type {THREE.Vector2} */
-        this.mouse = new THREE.Vector2();
-
         /** @type {THREE.PointLight} */
         this.pointLight;
 
         /** @type {THREE.Group} */
-        this.linkCubes; 
+        this.cubes;
 
         this._createControls();
         this._initGeometry();
-        this._initLinkCubes();
 
         this._initLighting();
         this._initEventListeners();
     }
 
+    /** 
+     * Create and initialize values for scene camera
+    */
     _initCamera() {
         const gl = this.renderer.context;
         this.camera = new THREE.PerspectiveCamera(
@@ -60,6 +56,9 @@ export class Reactor extends Room {
         this.camera.updateProjectionMatrix();
     }
 
+    /**
+     * Initialize orbit controls
+     */
     _createControls() {
         const controls = new THREE.OrbitControls( this.camera );  
         controls.enablePan = false;
@@ -73,11 +72,19 @@ export class Reactor extends Room {
         return controls;
     }
 
+    /**
+     * Generates all meshes for the scene
+     * Adds all meshes to the scene
+     */
     _initGeometry() {
-    
-        /** @type {THREE.Object3D[]} */
-        let objects = [];
-    
+        this._initRoom();
+        this._initCubes();
+    }
+
+    /**
+     * Generates room mesh
+     */
+    _initRoom() {
         let geometry;
         let material;
         let mesh;
@@ -98,29 +105,17 @@ export class Reactor extends Room {
         geometry = new THREE.CylinderGeometry(0.25, 1.5, 10, 12, 10);
         material = new THREE.MeshLambertMaterial({color : 0x4286f4});
         mesh = new THREE.Mesh(geometry, material);
+
+        //Pillars
+        for(let i = -1; i < 2; i += 2) {
+            for(let k = -1; k < 2; k += 2) {
+                mesh = mesh.clone();
+                mesh.position.set(5*i, 0, 5*k);
     
-        mesh.position.set(-5, 0, -5);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
-    
-        mesh = mesh.clone();
-        mesh.position.set(5, 0, -5);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
-    
-        mesh = mesh.clone();
-        mesh.position.set(5, 0, 5);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
-    
-        mesh = mesh.clone();
-        mesh.position.set(-5, 0, 5);
-    
-        room.add(mesh);
-        room.add(this._createEdgeframe(mesh, 0x4286f4));
+                room.add(mesh);
+                room.add(this._createEdgeframe(mesh, 0x4286f4));
+            }
+        }
     
         material = new THREE.MeshLambertMaterial({color : 0x4286f4, emissive : 0x4286f4, emissiveIntensity : 0.2});
     
@@ -140,35 +135,39 @@ export class Reactor extends Room {
         room.add(mesh);
         room.add(this._createEdgeframe(mesh, 0x4286f4));
     
-        objects.push(room);
-    
-        this._addObjectsToScene(objects);
+        this.scene.add(room);
     }
 
-    _initLinkCubes() {
-        this.linkCubes = new THREE.Group();
+    /**
+     * Create cube mesh
+     * Global cube vals
+     */
+    _initCubes() {
+        this.cubes = new THREE.Group();
     
         let geometry = new THREE.CubeGeometry(0.5, 0.5, 0.5, 10, 10, 10);
         let material = new THREE.MeshStandardMaterial({color : 0xf4b042});
     
         let mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(0, -0.2, -2);
-        mesh.name = "Link-1";
     
-        this.linkCubes.add(mesh);
-        this.linkCubes.add(this._createEdgeframe(mesh, 0xffffff))
+        this.cubes.add(mesh);
+        this.cubes.add(this._createEdgeframe(mesh, 0xffffff))
     
         mesh = mesh.clone(false);
         mesh.rotateY(3.14159);
         mesh.position.set(0, -0.2, 2);
-        mesh.name = "Link-2";
     
-        this.linkCubes.add(mesh);
-        this.linkCubes.add(this._createEdgeframe(mesh, 0xffffff))
+        this.cubes.add(mesh);
+        this.cubes.add(this._createEdgeframe(mesh, 0xffffff))
         
-        this.scene.add(this.linkCubes);
+        this.scene.add(this.cubes);
     }
 
+    /**
+     * Initalizes lighting objects for the scene.
+     * Adds lights to scene
+     */
     _initLighting() {
         let lights = [];
     
@@ -186,35 +185,18 @@ export class Reactor extends Room {
         this._addObjectsToScene(lights);
     }
 
-    _initEventListeners() {
-        this.onMouseMove = this.onMouseMove.bind(this);
-        this._addEventListener(window, 'mousemove', this.onMouseMove);
-    }
-
-    onMouseMove( event ) {
-        this.mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-        this.mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-        
-        // update the picking ray with the camera and mouse position
-        this.raycaster.setFromCamera( this.mouse, this.camera );
-    
-        // calculate objects intersecting the picking ray
-        let intersects = this.raycaster.intersectObjects([this.linkCubes.getObjectByName("Link-1"), this.linkCubes.getObjectByName("Link-2")], false);
-    
-        if(!intersects.length)
-            document.getElementById("display-text").innerText = "";
-        else  {
-            document.getElementById("display-text").innerText = intersects[0].object.name;
-        }
-    }
-
+    /**
+     * Called externally, updates scene every frame
+     * @param {Number} timestamp 
+     */
     _animate(timestamp) {
+        let delta = this.clock.getDelta();
         //Pulsing point light
         this.pointLight.intensity = 0.3 * Math.abs(Math.sin(timestamp * 0.001)) + 0.5;
 
         //Rotate link cubes
-        this.linkCubes.children.forEach(function(cube) {
-            cube.rotateX(0.01);
+        this.cubes.children.forEach(function(cube) {
+            cube.rotateX(delta);
         });
     
         this.controls.update();
